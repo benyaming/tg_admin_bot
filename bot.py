@@ -23,7 +23,7 @@ async def init_user_track(user_token: str) -> None:
     )
     await redis.set(user_token, 1)
 
-    await sleep(60)
+    await sleep(300)
     user_in_redis = await redis.exists(user_token)
     if not bool(user_in_redis):
         return
