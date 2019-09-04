@@ -42,7 +42,6 @@ async def stop_user_track(user_token: str) -> None:
 
 @dp.message_handler(content_types=ContentTypes.NEW_CHAT_MEMBERS)
 async def new_chat_member(msg: Message):
-    print(123)
     rights = ChatPermissions(
         can_send_messages=False,
         can_send_media_messages=False,
