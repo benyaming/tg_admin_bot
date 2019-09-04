@@ -27,9 +27,10 @@ async def init_user_track(user_token: str) -> None:
     user_in_redis = await redis.exists(user_token)
     if not bool(user_in_redis):
         return
-    user, chat = user_token.split(':')
+    user, chat, msg_id = user_token.split(':')
     await bot.kick_chat_member(chat, user)
     await redis.delete(user_token)
+    await bot.delete_message(chat, msg_id)
 
 
 async def stop_user_track(user_token: str) -> None:
@@ -48,9 +49,8 @@ async def new_chat_member(msg: Message):
         can_send_other_messages=False
     )
     await bot.restrict_chat_member(msg.chat.id, msg.new_chat_members[0].id, permissions=rights)
-    create_task(init_user_track(f'{msg.from_user.id}:{msg.chat.id}'))
-    # await init_user_track(f'{msg.from_user.id}:{msg.chat.id}')
     answer = await bot.send_message(msg.chat.id, question_text)
+    create_task(init_user_track(f'{msg.from_user.id}:{msg.chat.id}:{answer.message_id}'))
 
     kb = InlineKeyboardMarkup()
     kb.add(InlineKeyboardButton(
