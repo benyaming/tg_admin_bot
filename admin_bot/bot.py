@@ -104,4 +104,5 @@ async def handle_button(call: CallbackQuery):
     logging.info(f'{call.from_user.id} allowed to chat!')
 
 
-start_polling(dp, skip_updates=True, on_startup=on_start, on_shutdown=on_shutdown)
+if __name__ == '__main__':
+    start_polling(dp, skip_updates=True, on_startup=on_start, on_shutdown=on_shutdown)
