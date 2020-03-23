@@ -72,7 +72,7 @@ async def stop_user_track(user_token: str, kick: int = False):
 async def init_user_track(user_token: str):
     await CONNECTORS['redis'].set(user_token, 1)
 
-    await sleep(5)
+    await sleep(300)
     user_in_redis = await CONNECTORS['redis'].exists(user_token)
     if not bool(user_in_redis):
         return
