@@ -19,6 +19,7 @@ from admin_bot.utils import *
 logging.basicConfig(level=logging.INFO, format='%(asctime)-15s [ %(levelname)s ] <|> %(message)s')
 
 STORAGE = {}
+TIME_TO_CHECK = int(environ.get('TIME_TO_CHECK', 300))
 
 
 bot = Bot(environ.get('TOKEN'))
@@ -27,6 +28,7 @@ dp = Dispatcher(bot)
 
 async def on_start(dispatcher: Dispatcher):
     logging.info('STARTING TELEGRAM ADMIN BOT...')
+    logging.info(f'Time to check: {TIME_TO_CHECK}')
 
 
 async def on_shutdown(dispatcher: Dispatcher):
@@ -36,12 +38,13 @@ async def on_shutdown(dispatcher: Dispatcher):
 
 async def stop_user_track(token: tuple, kick: int = False):
     user_id, chat_id = token
-    msg_id = STORAGE[token]
+    msg_id, service_msg_id = STORAGE[token]
     logging.info(f'Stop user track for user {user_id}')
 
     if kick:
         logging.info(f'Kicking user {user_id}')
         await bot.kick_chat_member(chat_id, user_id)
+        await bot.delete_message(chat_id, service_msg_id)
     else:
         logging.info(f'Grant allow permissions to user {user_id}')
         await bot.restrict_chat_member(chat_id, user_id, permissions=ALLOW_PERMISSIONS)
@@ -53,11 +56,11 @@ async def stop_user_track(token: tuple, kick: int = False):
     await bot.delete_message(chat_id, msg_id)
 
 
-async def init_user_track(user_id: int, chat_id: int, msg_id: int):
+async def init_user_track(user_id: int, chat_id: int, msg_id: int, service_msg_id: int):
     token = (user_id, chat_id)
-    STORAGE[token] = msg_id
+    STORAGE[token] = (msg_id, service_msg_id)
 
-    await sleep(300)
+    await sleep(TIME_TO_CHECK)
 
     if token in STORAGE:
         await stop_user_track(token, kick=True)
@@ -89,7 +92,8 @@ async def new_chat_member(msg: Message):
     create_task(init_user_track(
         user_id=msg.from_user.id,
         chat_id=msg.chat.id,
-        msg_id=answer.message_id
+        msg_id=answer.message_id,
+        service_msg_id=msg.message_id
     ))
 
 
