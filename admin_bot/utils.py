@@ -1,9 +1,14 @@
+import random
+
 from aiogram.types.chat_permissions import ChatPermissions
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 question_text = 'Добро пожаловать! У вас есть 5 минут чтобы доказать, что вы не спамер!\n\n' \
-                'Бот работает в тестовом режиме, если что-то пошло не так, напишите любому из админов группы.'
-button_text = 'Я не спамер!'
+                'Сколько плюсов в названии группы?'
+
+right_button_text = '2'
+answer_query_wrong_button = 'Неверно, осталась одна попытка.'
 answer_query_right_user = 'Добро пожаловать!'
 
 wrong_answers = [
@@ -46,3 +51,22 @@ ALLOW_PERMISSIONS = ChatPermissions(
         can_send_media_messages=True,
         can_send_other_messages=True
     )
+
+
+def get_keyboard(user_id: int) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardMarkup()
+    kb.row_width = 5
+    answers = list(range(5))
+
+    random.shuffle(answers)
+
+    buttons = []
+
+    for answer in answers:
+        buttons.append(InlineKeyboardButton(
+            text=answer,
+            callback_data=f'{user_id}:{answer}'
+        ))
+    kb.add(*buttons)
+
+    return kb

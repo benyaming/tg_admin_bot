@@ -1,6 +1,6 @@
 import logging
-import random
 from os import environ
+from typing import Tuple
 from asyncio import sleep, create_task
 
 from aiogram import Dispatcher, Bot
@@ -8,8 +8,6 @@ from aiogram.utils.executor import start_polling
 from aiogram.types import (
     ContentTypes,
     Message,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
     CallbackQuery
 )
 
@@ -19,6 +17,7 @@ from admin_bot.utils import *
 logging.basicConfig(level=logging.INFO, format='%(asctime)-15s [ %(levelname)s ] <|> %(message)s')
 
 STORAGE = {}
+ATTEMPTS = []
 TIME_TO_CHECK = int(environ.get('TIME_TO_CHECK', 300))
 
 
@@ -36,7 +35,7 @@ async def on_shutdown(dispatcher: Dispatcher):
         await stop_user_track(token)
 
 
-async def stop_user_track(token: tuple, kick: int = False):
+async def stop_user_track(token: Tuple[int, int], kick: int = False):
     user_id, chat_id = token
     msg_id, service_msg_id = STORAGE[token]
     logging.info(f'Stop user track for user {user_id}')
@@ -50,6 +49,9 @@ async def stop_user_track(token: tuple, kick: int = False):
         await bot.restrict_chat_member(chat_id, user_id, permissions=ALLOW_PERMISSIONS)
 
     logging.info(f'Deleting token {token} from storage.')
+
+    if token in ATTEMPTS:
+        ATTEMPTS.remove(token)
     del STORAGE[token]
 
     logging.info(f'Deletting message {msg_id}')
@@ -66,14 +68,17 @@ async def init_user_track(user_id: int, chat_id: int, msg_id: int, service_msg_i
         await stop_user_track(token, kick=True)
 
 
+def validate_attempt(token: Tuple[int, int]) -> bool:
+    if token in ATTEMPTS:
+        return False
+
+    ATTEMPTS.append(token)
+    return True
+
+
 @dp.message_handler(commands=['start'])
 async def handle_start(msg: Message):
     await msg.reply('Hi!')
-
-
-# @dp.message_handler(commands=['q'])
-# async def q(msg: Message):
-#     await on_shutdown('d')
 
 
 @dp.message_handler(content_types=ContentTypes.NEW_CHAT_MEMBERS)
@@ -85,10 +90,9 @@ async def new_chat_member(msg: Message):
     logging.info(f'New chat_member detected! id: {msg.from_user.id}. Restricting...')
     await bot.restrict_chat_member(msg.chat.id, msg.new_chat_members[0].id, permissions=RESTRICT_PERMISSIONS)
 
-    kb = InlineKeyboardMarkup()
-    kb.add(InlineKeyboardButton(button_text, callback_data=msg.from_user.id))
+    kb = get_keyboard(msg.from_user.id)
 
-    answer = await bot.send_message(msg.chat.id, question_text, reply_markup=kb)
+    answer = await msg.reply(question_text, reply_markup=kb)
     create_task(init_user_track(
         user_id=msg.from_user.id,
         chat_id=msg.chat.id,
@@ -108,9 +112,22 @@ async def handle_left_member(msg: Message):
 
 @dp.callback_query_handler(lambda call: True)
 async def handle_button(call: CallbackQuery):
-    user_id = int(call.data)
+    user_id, answer = call.data.split(':')
 
-    if call.from_user.id == user_id:
+    if call.from_user.id == int(user_id):
+        if answer != right_button_text:
+            allow_attempt = validate_attempt((call.from_user.id, call.message.chat.id))
+
+            if allow_attempt:
+                await bot.edit_message_reply_markup(
+                    chat_id=call.message.chat.id,
+                    message_id=call.message.message_id,
+                    reply_markup=get_keyboard(call.from_user.id)
+                )
+                await call.answer(answer_query_wrong_button, show_alert=True)
+                return
+            else:
+                return await stop_user_track((call.from_user.id, call.message.chat.id), kick=True)
         await call.answer(answer_query_right_user)
         logging.info(f'{call.from_user.id} passed the test! Removing restrictions...')
 
