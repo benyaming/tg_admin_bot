@@ -78,7 +78,8 @@ def validate_attempt(token: Tuple[int, int]) -> bool:
 
 @dp.message_handler(commands=['start'])
 async def handle_start(msg: Message):
-    await msg.reply('Hi!')
+    if msg.chat.type == 'private':
+        await msg.reply('Hi!')
 
 
 @dp.message_handler(content_types=ContentTypes.NEW_CHAT_MEMBERS)
