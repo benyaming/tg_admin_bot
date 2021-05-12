@@ -118,6 +118,7 @@ async def handle_button(call: CallbackQuery):
     if call.from_user.id == int(user_id):
         if answer != right_button_text:
             allow_attempt = validate_attempt((call.from_user.id, call.message.chat.id))
+            logging.debug(f'{call.from_user.id} entered wrong value [{answer}]!')
 
             if allow_attempt:
                 await bot.edit_message_reply_markup(

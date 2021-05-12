@@ -3,15 +3,15 @@
 question: "Добро пожаловать! У вас есть 5 минут чтобы доказать, что вы не спамер!\n\nСколько плюсов в названии группы?"
 
 button_options:
-  - title: 1
+  - title: "1"
     correct: false
-  - title: 2
+  - title: "2"
     correct: true
-  - title: 3
+  - title: "3"
     correct: false
-  - title: 4
+  - title: "4"
     correct: false
-  - title: 5
+  - title: "5"
     correct: false
 
 enable_wrong_answers: true
