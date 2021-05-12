@@ -10,11 +10,14 @@ from aiogram.types import (
     Message,
     CallbackQuery
 )
+from betterlogging import get_colorized_logger, DEBUG
 
 from admin_bot.utils import *
+from admin_bot.config_parser import CONFIG_STORAGE
 
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)-15s [ %(levelname)s ] <|> %(message)s')
+logger = get_colorized_logger('admin_bot')
+logger.setLevel(DEBUG)
 
 STORAGE = {}
 ATTEMPTS = []
@@ -26,8 +29,8 @@ dp = Dispatcher(bot)
 
 
 async def on_start(dispatcher: Dispatcher):
-    logging.info('STARTING TELEGRAM ADMIN BOT...')
-    logging.info(f'Time to check: {TIME_TO_CHECK}')
+    logger.info('STARTING TELEGRAM ADMIN BOT...')
+    logger.info(f'Time to check: {TIME_TO_CHECK}')
 
 
 async def on_shutdown(dispatcher: Dispatcher):
@@ -38,23 +41,23 @@ async def on_shutdown(dispatcher: Dispatcher):
 async def stop_user_track(token: Tuple[int, int], kick: int = False):
     user_id, chat_id = token
     msg_id, service_msg_id = STORAGE[token]
-    logging.info(f'Stop user track for user {user_id}')
+    logger.info(f'Stop user track for user {user_id}')
 
     if kick:
-        logging.info(f'Kicking user {user_id}')
+        logger.info(f'Kicking user {user_id}')
         await bot.kick_chat_member(chat_id, user_id)
         await bot.delete_message(chat_id, service_msg_id)
     else:
-        logging.info(f'Grant allow permissions to user {user_id}')
+        logger.info(f'Grant allow permissions to user {user_id}')
         await bot.restrict_chat_member(chat_id, user_id, permissions=ALLOW_PERMISSIONS)
 
-    logging.info(f'Deleting token {token} from storage.')
+    logger.info(f'Deleting token {token} from storage.')
 
     if token in ATTEMPTS:
         ATTEMPTS.remove(token)
     del STORAGE[token]
 
-    logging.info(f'Deletting message {msg_id}')
+    logger.info(f'Deletting message {msg_id}')
     await bot.delete_message(chat_id, msg_id)
 
 
@@ -84,16 +87,20 @@ async def handle_start(msg: Message):
 
 @dp.message_handler(content_types=ContentTypes.NEW_CHAT_MEMBERS)
 async def new_chat_member(msg: Message):
-    if len(msg.new_chat_members) > 0 and msg.new_chat_members[0].id != msg.from_user.id:
-        logging.info(f'User {msg.from_user.id} added user {msg.new_chat_members[0].id}. Skipping...')
+    config = CONFIG_STORAGE.get(msg.chat.mention.lower())
+    if not config:
         return
 
-    logging.info(f'New chat_member detected! id: {msg.from_user.id}. Restricting...')
+    if len(msg.new_chat_members) > 0 and msg.new_chat_members[0].id != msg.from_user.id:
+        logger.info(f'User {msg.from_user.id} added user {msg.new_chat_members[0].id}. Skipping...')
+        return
+
+    logger.info(f'New chat_member detected! id: {msg.from_user.id}. Restricting...')
     await bot.restrict_chat_member(msg.chat.id, msg.new_chat_members[0].id, permissions=RESTRICT_PERMISSIONS)
 
-    kb = get_keyboard(msg.from_user.id)
+    kb = get_keyboard(msg.from_user.id, config.button_options)
 
-    answer = await msg.reply(question_text, reply_markup=kb)
+    answer = await msg.reply(config.question, reply_markup=kb)
     create_task(init_user_track(
         user_id=msg.from_user.id,
         chat_id=msg.chat.id,
@@ -104,41 +111,49 @@ async def new_chat_member(msg: Message):
 
 @dp.message_handler(content_types=ContentTypes.LEFT_CHAT_MEMBER)
 async def handle_left_member(msg: Message):
-    logging.info(f'User {msg.from_user.id} left the group {msg.chat.id}')
+    logger.info(f'User {msg.from_user.id} left the group {msg.chat.id}')
     token = (msg.from_user.id, msg.chat.id)
     if token in STORAGE:
-        logging.info(f'Removing token {token} from storage')
+        logger.info(f'Removing token {token} from storage')
         await stop_user_track(token)
 
 
 @dp.callback_query_handler(lambda call: True)
 async def handle_button(call: CallbackQuery):
+    config = CONFIG_STORAGE.get(call.message.chat.mention.lower())
+    if not config:
+        return
+
     user_id, answer = call.data.split(':')
 
     if call.from_user.id == int(user_id):
-        if answer != right_button_text:
+        if answer != config.right_answer:
             allow_attempt = validate_attempt((call.from_user.id, call.message.chat.id))
-            logging.debug(f'{call.from_user.id} entered wrong value [{answer}]!')
+            logger.debug(f'{call.from_user.id} entered wrong value [{answer}]!')
 
             if allow_attempt:
                 await bot.edit_message_reply_markup(
                     chat_id=call.message.chat.id,
                     message_id=call.message.message_id,
-                    reply_markup=get_keyboard(call.from_user.id)
+                    reply_markup=get_keyboard(call.from_user.id, config.button_options)
                 )
-                await call.answer(answer_query_wrong_button, show_alert=True)
+                await call.answer(config.answer_wrong_button, show_alert=True)
                 return
             else:
                 return await stop_user_track((call.from_user.id, call.message.chat.id), kick=True)
-        await call.answer(answer_query_right_user)
-        logging.info(f'{call.from_user.id} passed the test! Removing restrictions...')
+        await call.answer(config.answer_right_button)
+        logger.info(f'{call.from_user.id} passed the test! Removing restrictions...')
 
         token = (call.from_user.id, call.message.chat.id)
         await stop_user_track(token)
-        logging.info(f'{call.from_user.id} allowed to chat!')
+        logger.info(f'{call.from_user.id} allowed to chat!')
 
     else:
-        answer = random.choice(wrong_answers)
+        if config.is_wrong_numbers_enabled:
+            answer = random.choice(config.wrong_answers)
+        else:
+            answer = "Forbidden!"
+
         await call.answer(answer, show_alert=True)
 
 

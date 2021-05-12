@@ -9,6 +9,8 @@ verify_ssl = true
 aiogram = "*"
 aioredis = "*"
 pyyaml = "*"
+pydantic = "*"
+betterlogging = "*"
 
 [requires]
 python_version = "3.7"

@@ -1,25 +1,9 @@
 import random
+from typing import List
 
-import yaml
 from aiogram.types.chat_permissions import ChatPermissions
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-
-def get_yaml() -> dict:
-    with open('../config.yaml', encoding='utf-8') as f:
-        return yaml.load(f, Loader=yaml.Loader)
-
-
-config = get_yaml()
-question_text = config['question']
-
-button_options = [a['title'] for a in config['button_options']]
-right_button_text = list(filter(lambda a: a['correct'], config['button_options']))[0]['title']
-
-answer_query_wrong_button = 'Неверно, осталась одна попытка.'
-answer_query_right_user = 'Добро пожаловать!'
-
-wrong_answers = config['wrong_answers'] if config['enable_wrong_answers'] else ['Недоступно']
 
 RESTRICT_PERMISSIONS = ChatPermissions(
         can_send_messages=False,
@@ -33,7 +17,7 @@ ALLOW_PERMISSIONS = ChatPermissions(
     )
 
 
-def get_keyboard(user_id: int) -> InlineKeyboardMarkup:
+def get_keyboard(user_id: int, button_options: List[str]) -> InlineKeyboardMarkup:
     kb = InlineKeyboardMarkup()
     kb.row_width = 5
 
