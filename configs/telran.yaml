@@ -1,20 +1,20 @@
 # Example file for TR++ chat (https://t.me/telran)
+group_mention: "@telran"
 
 question: "Добро пожаловать! У вас есть 5 минут чтобы доказать, что вы не спамер!\n\nСколько плюсов в названии группы?"
+answer_wrong_button: "Неверно, осталась одна попытка."
+answer_right_button: "Добро пожаловать!"
 
 button_options:
-  - title: "1"
-    correct: false
-  - title: "2"
-    correct: true
-  - title: "3"
-    correct: false
-  - title: "4"
-    correct: false
-  - title: "5"
-    correct: false
+  -  "1"
+  -  "2"
+  -  "3"
+  -  "4"
+  -  "5"
 
-enable_wrong_answers: true
+right_answer: "2"
+
+is_wrong_numbers_enabled: true
 
 wrong_answers:
     - "Я бы на твоем месте застрелился."
