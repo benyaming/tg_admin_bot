@@ -53,7 +53,7 @@ async def stop_user_track(token: Tuple[int, int], kick: int = False):
         await bot.kick_chat_member(chat_id, user_id)
         await bot.delete_message(chat_id, service_msg_id)
     else:
-        await aiogram_metrics.manual_track('Allow user to join')
+        aiogram_metrics.manual_track('Allow user to join')
         logger.info(f'Grant allow permissions to user {user_id}')
         await bot.restrict_chat_member(chat_id, user_id, permissions=ALLOW_PERMISSIONS)
 
