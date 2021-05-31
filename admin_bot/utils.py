@@ -19,17 +19,25 @@ ALLOW_PERMISSIONS = ChatPermissions(
 
 def get_keyboard(user_id: int, button_options: List[str]) -> InlineKeyboardMarkup:
     kb = InlineKeyboardMarkup()
-    kb.row_width = 5
+    # kb.row_width = 5
 
     random.shuffle(button_options)
 
-    buttons = []
-
+    row = []
+    line_length = 0
     for answer in button_options:
-        buttons.append(InlineKeyboardButton(
+        if (line_length + len(answer) > 20) or (line_length + len(answer) > 5 and len(row) > 2):
+            kb.row(*row)
+            line_length = 0
+            row = []
+
+        row.append(InlineKeyboardButton(
             text=answer,
             callback_data=f'{user_id}:{answer}'
         ))
-    kb.add(*buttons)
+        line_length += len(answer)
+
+    if row:
+        kb.row(*row)
 
     return kb

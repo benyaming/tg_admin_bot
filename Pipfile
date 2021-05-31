@@ -7,10 +7,10 @@ verify_ssl = true
 
 [packages]
 aiogram = "*"
-aioredis = "*"
 pyyaml = "*"
 pydantic = "*"
 betterlogging = "*"
+aiogram-metrics = "*"
 
 [requires]
 python_version = "3.7"

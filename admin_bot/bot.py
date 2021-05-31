@@ -1,8 +1,8 @@
-import logging
-from os import environ
+from os import environ, getenv
 from typing import Tuple
 from asyncio import sleep, create_task
 
+import aiogram_metrics
 from aiogram import Dispatcher, Bot
 from aiogram.utils.executor import start_polling
 from aiogram.types import (
@@ -32,10 +32,14 @@ async def on_start(dispatcher: Dispatcher):
     logger.info('STARTING TELEGRAM ADMIN BOT...')
     logger.info(f'Time to check: {TIME_TO_CHECK}')
 
+    await aiogram_metrics.register(getenv('METRICS_DSN'), getenv('METRICS_TABLE_NAME'))
+
 
 async def on_shutdown(dispatcher: Dispatcher):
     for token in STORAGE:
         await stop_user_track(token)
+
+    await aiogram_metrics.close()
 
 
 async def stop_user_track(token: Tuple[int, int], kick: int = False):
@@ -44,10 +48,12 @@ async def stop_user_track(token: Tuple[int, int], kick: int = False):
     logger.info(f'Stop user track for user {user_id}')
 
     if kick:
+        await aiogram_metrics.manual_track('Kick user')
         logger.info(f'Kicking user {user_id}')
         await bot.kick_chat_member(chat_id, user_id)
         await bot.delete_message(chat_id, service_msg_id)
     else:
+        await aiogram_metrics.manual_track('Allow user to join')
         logger.info(f'Grant allow permissions to user {user_id}')
         await bot.restrict_chat_member(chat_id, user_id, permissions=ALLOW_PERMISSIONS)
 
@@ -61,6 +67,7 @@ async def stop_user_track(token: Tuple[int, int], kick: int = False):
     await bot.delete_message(chat_id, msg_id)
 
 
+@aiogram_metrics.track('Init user track')
 async def init_user_track(user_id: int, chat_id: int, msg_id: int, service_msg_id: int):
     token = (user_id, chat_id)
     STORAGE[token] = (msg_id, service_msg_id)
