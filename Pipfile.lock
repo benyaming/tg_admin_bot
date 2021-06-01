@@ -26,10 +26,10 @@
         },
         "aiogram-metrics": {
             "hashes": [
-                "sha256:7f18623fa8cd3eb621901b6e3623f02f2700c94c85237148b431828475bc82cb"
+                "sha256:84725c748e44d357012b4b6495cb788ee020b080e2f936e4c2f05fe688e799e2"
             ],
             "index": "pypi",
-            "version": "==0.0.7"
+            "version": "==0.0.9"
         },
         "aiohttp": {
             "hashes": [
@@ -108,11 +108,11 @@
         },
         "betterlogging": {
             "hashes": [
-                "sha256:ee6d51a8d766e05b2206ca72b707215ab28dbe77774d67b8563eaa3879b8de2b",
-                "sha256:f9ee8f9fdc51a7b1203bf787ecab112d32b3f11a72dfb952599075bcf43d565b"
+                "sha256:f3ffb48ad4169d65cc23cb5cd65d0ac125aad86f0f98d80bdbca88d0c150526f",
+                "sha256:f50945d4a87012e42ff53a68102a21039690d837bce09f211be6d3446a7b49c1"
             ],
             "index": "pypi",
-            "version": "==0.0.8"
+            "version": "==0.0.9"
         },
         "certifi": {
             "hashes": [
