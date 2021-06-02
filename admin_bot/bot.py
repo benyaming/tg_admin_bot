@@ -48,7 +48,7 @@ async def stop_user_track(token: Tuple[int, int], kick: int = False):
     logger.info(f'Stop user track for user {user_id}')
 
     if kick:
-        await aiogram_metrics.manual_track('Kick user')
+        aiogram_metrics.manual_track('Kick user')
         logger.info(f'Kicking user {user_id}')
         await bot.kick_chat_member(chat_id, user_id)
         await bot.delete_message(chat_id, service_msg_id)
