@@ -11,6 +11,7 @@ pyyaml = "*"
 pydantic = "*"
 betterlogging = "*"
 aiogram-metrics = "*"
+typing_extensions = "*"
 
 [requires]
 python_version = "3.9"
