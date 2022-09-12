@@ -8,13 +8,13 @@ from aiogram.utils.executor import start_polling
 from aiogram.types import (
     ContentTypes,
     Message,
-    CallbackQuery
+    CallbackQuery,
+    chat_member
 )
 from betterlogging import get_colorized_logger, DEBUG
 
 from admin_bot.utils import *
 from admin_bot.config_parser import CONFIG_STORAGE
-
 
 logger = get_colorized_logger('admin_bot')
 logger.setLevel(DEBUG)
@@ -32,7 +32,7 @@ async def on_start(dispatcher: Dispatcher):
     logger.info('STARTING TELEGRAM ADMIN BOT...')
     logger.info(f'Time to check: {TIME_TO_CHECK}')
 
-    await aiogram_metrics.register(getenv('METRICS_DSN'), getenv('METRICS_TABLE_NAME'))
+    # await aiogram_metrics.register(getenv('METRICS_DSN'), getenv('METRICS_TABLE_NAME'))
 
 
 async def on_shutdown(dispatcher: Dispatcher):
@@ -95,6 +95,11 @@ async def handle_start(msg: Message):
 @dp.message_handler(content_types=ContentTypes.NEW_CHAT_MEMBERS)
 async def new_chat_member(msg: Message):
     config = CONFIG_STORAGE.get(msg.chat.mention.lower())
+    user_status = await bot.get_chat_member(msg.chat.id, msg.from_user.id)
+
+    if isinstance(user_status, chat_member.ChatMemberRestricted):
+        logger.info(f'User {msg.from_user.id} already has restrictions. Skipping...')
+
     if not config:
         return
 
