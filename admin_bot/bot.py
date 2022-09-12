@@ -99,6 +99,7 @@ async def new_chat_member(msg: Message):
 
     if isinstance(user_status, chat_member.ChatMemberRestricted):
         logger.info(f'User {msg.from_user.id} already has restrictions. Skipping...')
+        return
 
     if not config:
         return
